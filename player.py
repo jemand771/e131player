@@ -5,6 +5,7 @@ import time
 
 import sacn
 
+import config
 from queuecommand import QueueCommand
 
 
@@ -16,12 +17,12 @@ class Player:
         self.queue = []
         self.devices = {}
         self.thread_running = True
-        self.thread = threading.Thread(target=self.process_queue_loop, args=(0.05,))
+        self.thread = threading.Thread(target=self.process_queue_loop, args=(config.mspt,))
 
     def load_config(self):
 
         # todo config folder
-        with open("devices.json") as f:
+        with open("config/devices.json") as f:
             devices = json.load(f)
         # todo universe type (simple vs custom/advanced)
         for dev in devices:
@@ -53,18 +54,17 @@ class Player:
         pixels = sorted([self.pixel_to_universe(device, p) for p in pixels], key=lambda k: k[0])
         dmx = {}
         for i, (universe, pixel) in enumerate(pixels):
-            if not universe in dmx:
+            if universe not in dmx:
                 dmx[universe] = list(self.sender[universe].dmx_data)
             color = colors[i % numcols]
             dmx[universe][pixel:pixel+3] = color
         for u, data in dmx.items():
             self.sender[u].dmx_data = data
 
-
     def pixel_to_universe(self, device, pixel):
         if type(device) == str:
             device = self.devices[device]
-        universe = device["universe"] + math.floor(device["pixels"] / 170) - 1
+        universe = device["universe"] + pixel // 170
         pixel %= 170
         pixel *= 3
         return universe, pixel
@@ -77,9 +77,14 @@ class Player:
             self.queue.extend(cmd)
         self.queue = sorted(self.queue, key=lambda k: k.time)
 
-    def push_effect(self, eff):
-        # todo parse an effect class -> iterate queue-adding
-        pass
+    def push_effect(self, eff, device, *_, time_abs=None, time_rel=0):
+        starttime = time.time()
+        if time_abs is not None:
+            starttime = time_abs
+        starttime += time_rel
+
+        for effect in eff.get_commands(device, list(range(self.devices[device]["pixels"])), starttime):
+            self.push(effect)
 
     def process_queue(self):
 
@@ -92,6 +97,8 @@ class Player:
             # todo better command classes ?
             if elem.cmd == "set_pixel":
                 self.set_pixel(*elem.args, **elem.kwargs)
+            if elem.cmd == "set_pixels":
+                self.set_pixels(*elem.args, **elem.kwargs)
             del self.queue[0]
 
     def process_queue_loop(self, delay):
