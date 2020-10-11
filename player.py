@@ -13,7 +13,7 @@ class Player:
 
     def __init__(self):
         self.sender = sacn.sACNsender()
-        self.sender.start(bind_address="0.0.0.0")
+        self.sender.start(bind_address=config.bind_address)
         self.queue = []
         self.devices = {}
         self.thread_running = True
