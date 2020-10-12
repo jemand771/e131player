@@ -62,7 +62,6 @@ class Player:
             self.sender[u].dmx_data = data
 
     def pixel_to_universe(self, device, pixel):
-        print(type(pixel), pixel)
         if type(device) == str:
             device = self.devices[device]
         universe = device["universe"] + pixel // 170
@@ -95,7 +94,6 @@ class Player:
                     pixels.extend(list(range(*sp)))
                 else:
                     pixels.append(int(r))
-                print(pixels)
         if pixels is None:
             pixels = list(range(self.devices[device]["pixels"]))
 
@@ -111,7 +109,6 @@ class Player:
             if elem.time > time.time():
                 break
             # todo better command classes ?
-            print("processing elem", elem.cmd, elem.args, elem.kwargs)
             if elem.cmd == "set_pixel":
                 self.set_pixel(*elem.args, **elem.kwargs)
             if elem.cmd == "set_pixels":

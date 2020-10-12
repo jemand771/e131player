@@ -33,12 +33,14 @@ def solid_color(device):
 
 @app.route("/script/<script>/")
 def run_script(script):
+    delay = request.args.get("delay")
+    delay = 0 if delay is None else int(delay)
     path = "config/scripts/" + script + ".json"
     if not os.path.exists(path):
         abort(404)
     with open(path) as f:
         js = json.load(f)
-    p.start_script(js, 0)
+    p.start_script(js, delay)
     return "ok"
 
 
