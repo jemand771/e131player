@@ -22,6 +22,7 @@ class Effect:
             if x in kwargs:
                 exec("self." + x + " = " + str(kwargs[x]))
 
+    # todo integrate pixels earlier?
     def get_commands(self, device, pixels, starttime):
         lst = self.get_commands_universal()
         for cmd in lst:

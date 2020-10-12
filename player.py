@@ -22,7 +22,6 @@ class Player:
 
     def load_config(self):
 
-        # todo config folder
         with open("config/devices.json") as f:
             devices = json.load(f)
         # todo universe type (simple vs custom/advanced)
@@ -63,6 +62,7 @@ class Player:
             self.sender[u].dmx_data = data
 
     def pixel_to_universe(self, device, pixel):
+        print(type(pixel), pixel)
         if type(device) == str:
             device = self.devices[device]
         universe = device["universe"] + pixel // 170
@@ -78,14 +78,28 @@ class Player:
             self.queue.extend(cmd)
         self.queue = sorted(self.queue, key=lambda k: k.time)
 
-    def push_effect(self, eff, device, *_, time_abs=None, time_rel=0):
+    def push_effect(self, eff, device, *_, pixels=None, time_abs=None, time_rel=0):
         starttime = time.time()
         if time_abs is not None:
             starttime = time_abs
         starttime += time_rel
+        if pixels == "*":
+            pixels = None  # fall back to default: all pixels in device
+        if type(pixels) == str:
+            # parse pixel string
+            ranges = pixels.split(",")
+            pixels = []
+            for r in ranges:
+                if "-" in r:
+                    sp = [int(x) for x in r.split("-")]
+                    pixels.extend(list(range(*sp)))
+                else:
+                    pixels.append(int(r))
+                print(pixels)
+        if pixels is None:
+            pixels = list(range(self.devices[device]["pixels"]))
 
-        # todo pass parameter: which pixels to set
-        for effect in eff.get_commands(device, list(range(self.devices[device]["pixels"])), starttime):
+        for effect in eff.get_commands(device, pixels, starttime):
             self.push(effect)
 
     def process_queue(self):
@@ -120,5 +134,5 @@ class Player:
 
         for step in script.get("steps", []):
             eff_obj = effects.get_object_from_desc(step["effect"])
-            self.push_effect(eff_obj, step["device"], time_rel=delay + step["time"])
-            print(self.queue)
+            pixels = step["effect"].get("pixels", None)
+            self.push_effect(eff_obj, step["device"], pixels=pixels, time_rel=delay + step["time"])
