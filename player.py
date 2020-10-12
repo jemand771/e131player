@@ -6,6 +6,7 @@ import time
 import sacn
 
 import config
+import effects
 from queuecommand import QueueCommand
 
 
@@ -83,6 +84,7 @@ class Player:
             starttime = time_abs
         starttime += time_rel
 
+        # todo pass parameter: which pixels to set
         for effect in eff.get_commands(device, list(range(self.devices[device]["pixels"])), starttime):
             self.push(effect)
 
@@ -95,6 +97,7 @@ class Player:
             if elem.time > time.time():
                 break
             # todo better command classes ?
+            print("processing elem", elem.cmd, elem.args, elem.kwargs)
             if elem.cmd == "set_pixel":
                 self.set_pixel(*elem.args, **elem.kwargs)
             if elem.cmd == "set_pixels":
@@ -112,3 +115,10 @@ class Player:
 
     def stop(self):
         self.thread_running = False
+
+    def start_script(self, script, delay):
+
+        for step in script.get("steps", []):
+            eff_obj = effects.get_object_from_desc(step["effect"])
+            self.push_effect(eff_obj, step["device"], time_rel=delay + step["time"])
+            print(self.queue)

@@ -5,6 +5,12 @@ import config
 from queuecommand import QueueCommand
 
 
+def get_object_from_desc(eff_desc):
+    # eff_obj = eval(eff_desc["name"] + "(" + ", ".join([str(k) + "=" + str(v) for k, v in eff_desc["args"].items()]) + ")")
+    eff_class = eval(eff_desc["name"])
+    return eff_class(**eff_desc["args"])
+
+
 class Effect:
 
     def __init__(self, *args, **kwargs):
@@ -41,3 +47,10 @@ class RainbowEffect(Effect):
             rainbow_loop = rainbow_loop[self.sspeed:] + rainbow_loop[0:self.sspeed]
             cmds.append(cmd)
         return cmds
+
+
+class SolidEffect(Effect):
+
+    def get_commands_universal(self):
+
+        return [QueueCommand(0, "set_pixels", colors=[self.color])]
